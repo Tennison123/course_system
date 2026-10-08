@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงาน — Online Course</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🎓 ระบบคอร์สออนไลน์ <span>Online Course</span></div>
+    <nav><a href="/">จัดการข้อมูล</a><a href="/report" class="active">รายงาน</a></nav>
+  </header>
+  <main class="container">
+    <section class="cards">
+      <div class="metric"><div class="metric-num" id="m_lrn">—</div><div class="metric-label">ผู้เรียน</div></div>
+      <div class="metric"><div class="metric-num" id="m_crs">—</div><div class="metric-label">คอร์ส</div></div>
+      <div class="metric"><div class="metric-num" id="m_enr">—</div><div class="metric-label">การลงทะเบียน</div></div>
+      <div class="metric"><div class="metric-num" id="m_les">—</div><div class="metric-label">บทเรียน</div></div>
+    </section>
+    <section class="card">
+      <h3>📈 คอร์สยอดนิยม (Most Enrolled)</h3>
+      <div id="popularStatus" class="status"></div>
+      <div class="table-wrap"><table id="popularTable"><thead></thead><tbody></tbody></table></div>
+    </section>
+    <section class="card">
+      <h3>✅ อัตราการเรียนจบต่อคอร์ส (Completion Rate)</h3>
+      <div id="completionStatus" class="status"></div>
+      <div class="table-wrap"><table id="completionTable"><thead></thead><tbody></tbody></table></div>
+    </section>
+    <section class="card">
+      <h3>🔗 คอร์สและวิชาที่ต้องเรียนก่อน (Self-Join)</h3>
+      <div id="prereqStatus" class="status"></div>
+      <div class="table-wrap"><table id="prereqTable"><thead></thead><tbody></tbody></table></div>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='report.js') }}"></script>
+</body>
+</html>
