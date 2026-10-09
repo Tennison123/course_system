@@ -3,37 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>รายงาน — Online Course</title>
+  <title>รายงาน — Online Course Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='report.css') }}">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🎓 ระบบคอร์สออนไลน์ <span>Online Course</span></div>
-    <nav><a href="/">จัดการข้อมูล</a><a href="/report" class="active">รายงาน</a></nav>
-  </header>
-  <main class="container">
-    <section class="cards">
-      <div class="metric"><div class="metric-num" id="m_lrn">—</div><div class="metric-label">ผู้เรียน</div></div>
-      <div class="metric"><div class="metric-num" id="m_crs">—</div><div class="metric-label">คอร์ส</div></div>
-      <div class="metric"><div class="metric-num" id="m_enr">—</div><div class="metric-label">การลงทะเบียน</div></div>
-      <div class="metric"><div class="metric-num" id="m_les">—</div><div class="metric-label">บทเรียน</div></div>
-    </section>
-    <section class="card">
-      <h3>📈 คอร์สยอดนิยม (Most Enrolled)</h3>
-      <div id="popularStatus" class="status"></div>
-      <div class="table-wrap"><table id="popularTable"><thead></thead><tbody></tbody></table></div>
-    </section>
-    <section class="card">
-      <h3>✅ อัตราการเรียนจบต่อคอร์ส (Completion Rate)</h3>
-      <div id="completionStatus" class="status"></div>
-      <div class="table-wrap"><table id="completionTable"><thead></thead><tbody></tbody></table></div>
-    </section>
-    <section class="card">
-      <h3>🔗 คอร์สและวิชาที่ต้องเรียนก่อน (Self-Join)</h3>
-      <div id="prereqStatus" class="status"></div>
-      <div class="table-wrap"><table id="prereqTable"><thead></thead><tbody></tbody></table></div>
-    </section>
-  </main>
+  
+  <!-- Sidebar Menu -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-brand">เมนูจัดการ</div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-link">🏠 กลับหน้าจัดการข้อมูล</a>
+      <a href="/report" class="nav-link active">📊 ดูรายงานสรุป</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-content" id="mainContent">
+    <header class="topbar">
+      <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('closed'); document.getElementById('mainContent').classList.toggle('expanded');">☰</button>
+      <div class="brand-title">🎓 ระบบคอร์สออนไลน์ <span>Dashboard & Revenue</span></div>
+    </header>
+
+    <main class="container">
+      <h2 class="page-title">ภาพรวมระบบ (Overview)</h2>
+
+      <!-- Metrics Summary ด้านบน -->
+      <section class="dashboard-grid">
+        <div class="metric-card">
+          <div class="metric-icon">👨‍🎓</div>
+          <div class="metric-num" id="m_lrn">—</div>
+          <div class="metric-label">ผู้เรียนทั้งหมด (คน)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">📚</div>
+          <div class="metric-num" id="m_crs">—</div>
+          <div class="metric-label">คอร์สที่เปิดสอน (คอร์ส)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">📝</div>
+          <div class="metric-num" id="m_enr">—</div>
+          <div class="metric-label">ยอดการลงทะเบียน (ครั้ง)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎬</div>
+          <div class="metric-num" id="m_les">—</div>
+          <div class="metric-label">บทเรียนในระบบ (ตอน)</div>
+        </div>
+      </section>
+
+      <!-- 💰 กล่องรายงานรายได้และส่วนลด (เพิ่มใหม่) -->
+      <section class="report-section card">
+        <h3>💰 สรุปรายได้และส่วนลดตามระดับผู้เรียน (Revenue Analytics)</h3>
+        
+        <!-- แถบการ์ดรายได้สุทธิ vs ส่วนลด -->
+        <div class="revenue-summary-row">
+          <div class="rev-card gross">
+            <span class="rev-label">ยอดราคาเต็มทั้งหมด</span>
+            <div class="rev-amount" id="rev_gross">฿ 0.00</div>
+          </div>
+          <div class="rev-card discount">
+            <span class="rev-label">หักส่วนลดรวมทุกระดับ (-%)</span>
+            <div class="rev-amount" id="rev_discount">- ฿ 0.00</div>
+          </div>
+          <div class="rev-card net">
+            <span class="rev-label">รายได้สุทธิที่ได้รับจริง 💵</span>
+            <div class="rev-amount" id="rev_net">฿ 0.00</div>
+          </div>
+        </div>
+
+        <h4 style="margin: 20px 0 12px; color: #475569;">จำแนกตามระดับผู้เรียน (Learner Tiers)</h4>
+        <div class="tier-grid" id="tierGrid">
+          <!-- การ์ดระดับ Standard / Silver / Gold จะถูกสร้างจาก report.js -->
+        </div>
+      </section>
+
+      <!-- 🏆 Leaderboard Cards -->
+      <section class="report-section card">
+        <h3>🏆 5 อันดับคอร์สยอดนิยม (Leaderboard)</h3>
+        <div id="popularStatus" class="status"></div>
+        <div id="popularLeaderboard" class="ranking-list"></div>
+      </section>
+
+      <!-- 🎯 Completion Rate Cards -->
+      <section class="report-section card">
+        <h3>🎯 อัตราการเรียนจบต่อคอร์ส (Completion Analytics)</h3>
+        <div id="completionStatus" class="status"></div>
+        <div id="completionGrid" class="completion-grid"></div>
+      </section>
+
+      <!-- 🔗 Prerequisites Table -->
+      <section class="report-section card">
+        <h3>🔗 คอร์สและวิชาบังคับก่อน (Prerequisites)</h3>
+        <div id="prereqStatus" class="status"></div>
+        <div class="table-wrap">
+          <table id="prereqTable">
+            <thead></thead><tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
   <script src="{{ url_for('static', filename='report.js') }}"></script>
 </body>
 </html>

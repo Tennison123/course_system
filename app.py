@@ -16,7 +16,15 @@ def index():
 def report_page():
     return render_template('report.html')
 
-
+# ---------- เพิ่มใหม่: API สำหรับหน้า Home ----------
+@app.route('/api/home/courses', methods=['GET'])
+def api_home_courses():
+    try:
+        data = db.get_homepage_courses()
+        return jsonify({"ok": True, "data": data})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    
 # ---------- Learners ----------
 @app.route('/api/learners', methods=['GET', 'POST'])
 def api_learners():
@@ -156,6 +164,13 @@ def api_report_completion():
 def api_report_prereq():
     return jsonify({"ok": True, "data": db.report_course_prerequisites()})
 
+# ---------- API รายงานรายได้และส่วนลด ----------
+@app.route('/api/reports/revenue', methods=['GET'])
+def api_report_revenue():
+    try:
+        return jsonify({"ok": True, "data": db.report_revenue_summary()})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
