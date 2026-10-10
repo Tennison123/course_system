@@ -1,11 +1,46 @@
 # ============================================================
-#  app.py — Flask REST API Server
+#  app.py — Flask REST API Server (ระบบคอร์สออนไลน์)
+# ============================================================
+#
+#   [1] ตั้งค่าแอป และฟังก์ชันช่วยตอบ JSON   ok(), fail(), not_found()
+#   [2] หน้าเว็บ (HTML)                      /  ,  /report
+#   [3] API หน้า Home                        /api/home/courses
+#   [4] API ผู้เรียน (learners)              /api/learners
+#   [5] API คอร์ส (courses)                  /api/courses
+#   [6] API บทเรียน (lessons)                /api/lessons
+#   [7] API การลงทะเบียน (enrollments)       /api/enrollments
+#   [8] API Progress ราย Enrollment          /api/enrollments/<id>/progress
+#   [9] API รายงาน (reports)                 /api/reports/...
+#   [10] รันเซิร์ฟเวอร์
+#
 # ============================================================
 from flask import Flask, render_template, request, jsonify
 import db
 
+
+# ============================================================
+# [1] ตั้งค่าแอป และฟังก์ชันช่วยตอบ JSON
+# ============================================================
 app = Flask(__name__)
 
+
+def ok(data):
+    """ตอบสำเร็จ: {"ok": True, "data": ...}"""
+    return jsonify({"ok": True, "data": data})
+
+
+def fail(message, status=400):
+    """ตอบผิดพลาด: {"ok": False, "error": ...} พร้อมรหัส HTTP"""
+    return jsonify({"ok": False, "error": str(message)}), status
+
+
+def not_found():
+    return fail("ไม่พบข้อมูล", 404)
+
+
+# ============================================================
+# [2] หน้าเว็บ (HTML)
+# ============================================================
 
 @app.route('/')
 def index():
@@ -16,161 +51,184 @@ def index():
 def report_page():
     return render_template('report.html')
 
-# ---------- เพิ่มใหม่: API สำหรับหน้า Home ----------
+
+# ============================================================
+# [3] API หน้า Home
+# ============================================================
+
 @app.route('/api/home/courses', methods=['GET'])
 def api_home_courses():
     try:
-        data = db.get_homepage_courses()
-        return jsonify({"ok": True, "data": data})
+        return ok(db.get_homepage_courses())
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-    
-# ---------- Learners ----------
+        return fail(e)
+
+
+# ============================================================
+# [4] API ผู้เรียน (learners)
+# ============================================================
+
 @app.route('/api/learners', methods=['GET', 'POST'])
 def api_learners():
     if request.method == 'GET':
-        return jsonify({"ok": True, "data": db.search_learners(request.args)})
+        return ok(db.search_learners(request.args))
     try:
-        return jsonify({"ok": True, "data": db.create_learner(request.json)})
+        return ok(db.create_learner(request.json))
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return fail(e)
 
 
 @app.route('/api/learners/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def api_learner_item(id):
     if request.method == 'GET':
         item = db.get_learner(id)
-        return jsonify({"ok": True, "data": item}) if item else (jsonify({"ok": False, "error": "ไม่พบข้อมูล"}), 404)
+        return ok(item) if item else not_found()
     elif request.method == 'PUT':
         try:
-            return jsonify({"ok": True, "data": db.update_learner(id, request.json)})
+            return ok(db.update_learner(id, request.json))
         except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 400
+            return fail(e)
     elif request.method == 'DELETE':
-        return jsonify({"ok": True, "data": db.delete_learner(id)})
+        return ok(db.delete_learner(id))
 
 
-# ---------- Courses ----------
+# ============================================================
+# [5] API คอร์ส (courses)
+# ============================================================
+
 @app.route('/api/courses', methods=['GET', 'POST'])
 def api_courses():
     if request.method == 'GET':
-        return jsonify({"ok": True, "data": db.search_courses(request.args)})
+        return ok(db.search_courses(request.args))
     try:
-        return jsonify({"ok": True, "data": db.create_course(request.json)})
+        return ok(db.create_course(request.json))
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return fail(e)
 
 
 @app.route('/api/courses/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def api_course_item(id):
     if request.method == 'GET':
         item = db.get_course(id)
-        return jsonify({"ok": True, "data": item}) if item else (jsonify({"ok": False, "error": "ไม่พบข้อมูล"}), 404)
+        return ok(item) if item else not_found()
     elif request.method == 'PUT':
         try:
-            return jsonify({"ok": True, "data": db.update_course(id, request.json)})
+            return ok(db.update_course(id, request.json))
         except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 400
+            return fail(e)
     elif request.method == 'DELETE':
-        return jsonify({"ok": True, "data": db.delete_course(id)})
+        return ok(db.delete_course(id))
 
 
-# ---------- Lessons ----------
+# ============================================================
+# [6] API บทเรียน (lessons)
+# ============================================================
+
 @app.route('/api/lessons', methods=['GET', 'POST'])
 def api_lessons():
     if request.method == 'GET':
-        return jsonify({"ok": True, "data": db.search_lessons(request.args)})
+        return ok(db.search_lessons(request.args))
     try:
-        return jsonify({"ok": True, "data": db.create_lesson(request.json)})
+        return ok(db.create_lesson(request.json))
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return fail(e)
 
 
 @app.route('/api/lessons/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def api_lesson_item(id):
     if request.method == 'GET':
         item = db.get_lesson(id)
-        return jsonify({"ok": True, "data": item}) if item else (jsonify({"ok": False, "error": "ไม่พบข้อมูล"}), 404)
+        return ok(item) if item else not_found()
     elif request.method == 'PUT':
         try:
-            return jsonify({"ok": True, "data": db.update_lesson(id, request.json)})
+            return ok(db.update_lesson(id, request.json))
         except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 400
+            return fail(e)
     elif request.method == 'DELETE':
-        return jsonify({"ok": True, "data": db.delete_lesson(id)})
+        return ok(db.delete_lesson(id))
 
 
-# ---------- Enrollments ----------
+# ============================================================
+# [7] API การลงทะเบียน (enrollments)
+#     หมายเหตุ: db.create_enrollment / update_enrollment อาจ raise ValueError
+#     (เช่น ลงซ้ำ, ที่นั่งเต็ม, ยังไม่ผ่านวิชาบังคับ) จึงถูกจับด้วย except เดียวกัน
+# ============================================================
+
 @app.route('/api/enrollments', methods=['GET', 'POST'])
 def api_enrollments():
     if request.method == 'GET':
-        return jsonify({"ok": True, "data": db.search_enrollments(request.args)})
+        return ok(db.search_enrollments(request.args))
     try:
-        return jsonify({"ok": True, "data": db.create_enrollment(request.json)})
-    except ValueError as ve:
-        return jsonify({"ok": False, "error": str(ve)}), 400
+        return ok(db.create_enrollment(request.json))
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return fail(e)
 
 
 @app.route('/api/enrollments/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def api_enrollment_item(id):
     if request.method == 'GET':
         item = db.get_enrollment(id)
-        return jsonify({"ok": True, "data": item}) if item else (jsonify({"ok": False, "error": "ไม่พบข้อมูล"}), 404)
+        return ok(item) if item else not_found()
     elif request.method == 'PUT':
         try:
-            return jsonify({"ok": True, "data": db.update_enrollment(id, request.json)})
-        except ValueError as ve:
-            return jsonify({"ok": False, "error": str(ve)}), 400
+            return ok(db.update_enrollment(id, request.json))
         except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 400
+            return fail(e)
     elif request.method == 'DELETE':
-        return jsonify({"ok": True, "data": db.delete_enrollment(id)})
+        return ok(db.delete_enrollment(id))
 
 
-# ---------- จัดการ Progress ราย Enrollment ----------
+# ============================================================
+# [8] API Progress ราย Enrollment (หน้า "จัดการ Progress")
+# ============================================================
+
 @app.route('/api/enrollments/<int:id>/progress', methods=['GET', 'POST'])
 def handle_enrollment_progress(id):
     if request.method == 'GET':
         data = db.get_enrollment_progress_detail(id)
-        return jsonify({"ok": True, "data": data}) if data else (jsonify({"ok": False, "error": "ไม่พบข้อมูล"}), 404)
+        return ok(data) if data else not_found()
     elif request.method == 'POST':
         try:
             watched_ids = request.json.get('watched_lesson_ids', [])
-            res = db.save_enrollment_progress_bulk(id, watched_ids)
-            return jsonify({"ok": True, "data": res})
+            return ok(db.save_enrollment_progress_bulk(id, watched_ids))
         except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 400
+            return fail(e)
 
 
-# ---------- Reports ----------
+# ============================================================
+# [9] API รายงาน (reports)
+# ============================================================
+
 @app.route('/api/reports/summary')
 def api_report_summary():
-    return jsonify({"ok": True, "data": db.report_summary()})
+    return ok(db.report_summary())
 
 
 @app.route('/api/reports/popular-courses')
 def api_report_popular():
-    return jsonify({"ok": True, "data": db.report_popular_courses()})
+    return ok(db.report_popular_courses())
 
 
 @app.route('/api/reports/completion-rate')
 def api_report_completion():
-    return jsonify({"ok": True, "data": db.report_completion_rate()})
+    return ok(db.report_completion_rate())
 
 
 @app.route('/api/reports/prerequisites')
 def api_report_prereq():
-    return jsonify({"ok": True, "data": db.report_course_prerequisites()})
+    return ok(db.report_course_prerequisites())
 
-# ---------- API รายงานรายได้และส่วนลด ----------
+
 @app.route('/api/reports/revenue', methods=['GET'])
 def api_report_revenue():
     try:
-        return jsonify({"ok": True, "data": db.report_revenue_summary()})
+        return ok(db.report_revenue_summary())
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return fail(e)
 
+
+# ============================================================
+# [10] รันเซิร์ฟเวอร์
+# ============================================================
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

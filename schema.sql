@@ -35,6 +35,58 @@ DROP TABLE IF EXISTS lesson;
 DROP TABLE IF EXISTS course;
 DROP TABLE IF EXISTS learner;
 
+
+-- 1. ผู้เรียน (learner)
+CREATE TABLE learner (
+    learnerCREATE TABLE_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    join_date DATE NOT NULL
+);
+
+-- 2. คอร์ส (course)
+CREATE TABLE course (
+    course_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    price DECIMAL(10, 2) DEFAULT 0.00,
+    prerequisite_id INT NULL,
+    FOREIGN KEY (prerequisite_id) REFERENCES course(course_id) ON DELETE SET NULL
+);
+
+-- 3. บทเรียน (lesson)
+CREATE TABLE lesson (
+    lesson_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    seq_no INT NOT null UNIQUE,
+    duration_min INT NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE);
+    
+--
+
+CREATE TABLE enrollment (
+    enroll_id INT AUTO_INCREMENT PRIMARY KEY,
+    learner_id INT NOT NULL,
+    course_id INT NOT NULL,
+    enroll_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'studying',
+    UNIQUE (learner_id, course_id), -- ป้องกันการลงทะเบียนคอร์สเดิมซ้ำ
+    FOREIGN KEY (learner_id) REFERENCES learner(learner_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
+);
+-- 5. ความคืบหน้า (progress)
+CREATE TABLE progress (
+    learner_id INT NOT NULL,
+    lesson_id INT NOT NULL,
+    watched BOOLEAN DEFAULT TRUE,
+    completed_date DATE NOT NULL,
+    PRIMARY KEY (learner_id, lesson_id),
+    FOREIGN KEY (learner_id) REFERENCES learner(learner_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE
+);
+
+
 -- ------------------------------------------------------------
 -- 1. ผู้เรียน (learner) — มีครบทั้ง 3 ระดับ
 -- ------------------------------------------------------------
