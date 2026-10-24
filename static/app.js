@@ -1,30 +1,35 @@
-// ============================================================
+// ################################################################
 //  app.js — ฝั่งหน้าเว็บ (Frontend) ของระบบคอร์สออนไลน์
-// ============================================================
+// ################################################################
 //
-//   [1] ค่าตั้งต้นและตัวแปรสถานะ     ENTITIES, current, editingId, ...
-//   [2] ฟังก์ชันช่วยทั่วไป           $, setStatus, api
-//   [3] นำทาง (Sidebar / สลับหน้า)   toggleSidebar, switchView
-//   [4] หน้า Home (การ์ดคอร์ส)       loadHomeCourses, renderCourseCard
-//   [5] หน้า CRUD
-//        5.1 สร้างช่องฟอร์ม           fieldHtml (+ ตัวช่วยแต่ละชนิดช่อง)
-//        5.2 ค้นหา & ตาราง            buildSearch, doSearch, renderTable
-//        5.3 ฟอร์ม Modal & ปุ่มจัดการ  openForm, collectForm, editRow, deleteRow, save
-//        5.4 ผูกปุ่ม (Event)
-//   [6] หน้าจัดการ Progress          initProgressDropdown, loadEnrollmentProgress, saveEnrollmentProgress
-//   [7] เริ่มต้นระบบ                 window.onload
+//  สารบัญ  (กด Ctrl+F แล้วพิมพ์ "ส่วนที่ 5" เพื่อกระโดดไปส่วนนั้น)
+//
+//   ส่วนที่ 1  ค่าตั้งต้นและตัวแปรสถานะ    ENTITIES, DEFAULT_MAX_SEATS, current, editingId, ...
+//   ส่วนที่ 2  ฟังก์ชันช่วยทั่วไป           $, setStatus, api
+//   ส่วนที่ 3  นำทาง (Sidebar / สลับหน้า)   toggleSidebar, switchView
+//   ส่วนที่ 4  หน้า Home (การ์ดคอร์ส)       renderCourseCard, loadHomeCourses
+//   ส่วนที่ 5  หน้า CRUD (ผู้เรียน / คอร์ส / บทเรียน / ลงทะเบียน)
+//                5.1 คำนวณราคา Real-time     calculateEnrollmentPrice
+//                5.2 สร้างช่องฟอร์ม           fieldHtml (+ ตัวช่วยแต่ละชนิดช่อง)
+//                5.3 ค้นหา & ตาราง            buildSearch, doSearch, renderTable
+//                5.4 ฟอร์ม Modal & ปุ่มจัดการ  openForm, collectForm, editRow, deleteRow, save
+//                5.5 ผูกปุ่ม (Event)
+//   ส่วนที่ 6  หน้าจัดการ Progress          initProgressDropdown, loadEnrollmentProgress, saveEnrollmentProgress
+//   ส่วนที่ 7  เริ่มต้นระบบ                 window.onload
 //
 //  หมายเหตุ: ฟังก์ชันที่ index.html เรียกผ่าน onclick/onchange ต้องเป็นฟังก์ชันระดับบนสุด (global)
 //  ได้แก่ toggleSidebar, switchView, loadEnrollmentProgress, saveEnrollmentProgress,
 //        editRow, deleteRow, onLessonToggle  — ห้ามย้ายเข้าไปอยู่ใน block หรือ module
-// ============================================================
+//
+// ################################################################
 
 
-// ============================================================
-// [1] ค่าตั้งต้นและตัวแปรสถานะ
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 1 : ค่าตั้งต้นและตัวแปรสถานะ
+// ################################################################
 
-// นิยามแต่ละตาราง: label=ชื่อที่แสดง, api=URL, idKey=ชื่อคอลัมน์ id,
+// ---------- 1.1 นิยามแต่ละตาราง (ENTITIES) ----------
+// label=ชื่อที่แสดง, api=URL, idKey=ชื่อคอลัมน์ id,
 // search=ช่องค้นหา, form=ช่องในฟอร์มเพิ่ม/แก้ไข
 // ชนิดช่อง (type): text | number | date | select | dynamic_course | autocomplete_course | autocomplete_learner
 const ENTITIES = {
@@ -85,9 +90,10 @@ const ENTITIES = {
   }
 };
 
+// ---------- 1.2 ค่าคงที่ ----------
 const DEFAULT_MAX_SEATS = 20;   // ใช้เมื่อคอร์สไม่ได้กำหนดจำนวนที่นั่ง
 
-// ตัวแปรสถานะ (เปลี่ยนค่าไปตามที่ผู้ใช้กดเมนู/แก้ไข)
+// ---------- 1.3 ตัวแปรสถานะ (เปลี่ยนค่าไปตามที่ผู้ใช้กดเมนู/แก้ไข) ----------
 let current = "";               // ตารางที่เปิดอยู่ในหน้า CRUD (learners / courses / ...)
 let editingId = null;           // id ที่กำลังแก้ไขในฟอร์ม (null = กำลังเพิ่มใหม่)
 let allCourseOptions = [];      // รายการคอร์สสำหรับ dropdown / autocomplete
@@ -95,32 +101,37 @@ let allLearnerOptions = [];     // รายการผู้เรียนส
 let activeEnrollId = null;      // enrollment ที่เลือกอยู่ในหน้า Progress
 
 
-// ============================================================
-// [2] ฟังก์ชันช่วยทั่วไป
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 2 : ฟังก์ชันช่วยทั่วไป
+// ################################################################
 
+// ---------- 2.1 ทางลัดเลือก element ----------
 const $ = (s) => document.querySelector(s);
 
+// ---------- 2.2 แสดงข้อความสถานะ ----------
 function setStatus(el, msg, cls = "") {
   el.className = "status " + cls;
   el.textContent = msg;
 }
 
+// ---------- 2.3 เรียก API แล้วแปลงเป็น JSON ----------
 async function api(url, opts) {
   const res = await fetch(url, opts);
   return res.json();
 }
 
 
-// ============================================================
-// [3] นำทาง (Sidebar / สลับหน้า)
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 3 : นำทาง (Sidebar / สลับหน้า)
+// ################################################################
 
+// ---------- 3.1 เปิด/ปิดเมนูด้านซ้าย ----------
 function toggleSidebar() {
   $("#sidebar").classList.toggle("closed");
   $("#mainContent").classList.toggle("expanded");
 }
 
+// ---------- 3.2 สลับหน้า (Home / Progress / CRUD) ----------
 async function switchView(viewName, element = null) {
   // เปลี่ยนสถานะแถบเมนูซ้าย
   if (element) {
@@ -154,10 +165,11 @@ async function switchView(viewName, element = null) {
 }
 
 
-// ============================================================
-// [4] หน้า Home (การ์ดคอร์ส — วิบวับเมื่อใกล้เต็ม)
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 4 : หน้า Home (การ์ดคอร์ส — วิบวับเมื่อใกล้เต็ม)
+// ################################################################
 
+// ---------- 4.1 วาดการ์ดคอร์ส 1 ใบ ----------
 function renderCourseCard(c) {
   const enrolled = c.enrolled_count || 0;
   const max = c.max_seats || DEFAULT_MAX_SEATS;
@@ -190,6 +202,7 @@ function renderCourseCard(c) {
   `;
 }
 
+// ---------- 4.2 โหลดคอร์สทั้งหมดมาวาดลงหน้า Home ----------
 async function loadHomeCourses() {
   const r = await api("/api/home/courses");
   const grid = $("#courseGrid");
@@ -202,11 +215,51 @@ async function loadHomeCourses() {
 }
 
 
-// ============================================================
-// [5] หน้า CRUD (ใช้ร่วมกันทั้ง ผู้เรียน / คอร์ส / บทเรียน / ลงทะเบียน)
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 5 : หน้า CRUD (ใช้ร่วมกันทั้ง ผู้เรียน / คอร์ส / บทเรียน / ลงทะเบียน)
+// ################################################################
 
-// ---------- 5.1 สร้างช่องฟอร์ม (แยกตามชนิดช่อง) ----------
+// ---------- 5.1 คำนวณราคาสรุปชำระเงิน Real-time ใน Modal ลงทะเบียน ----------
+function calculateEnrollmentPrice() {
+  const learnerVal = $("#f_learner_id") ? $("#f_learner_id").value.trim() : "";
+  const courseVal = $("#f_course_id") ? $("#f_course_id").value.trim() : "";
+  const infoBox = $("#priceInfoBox");
+
+  if (!infoBox) return;
+
+  const learner = allLearnerOptions.find(l => String(l.learner_id) === String(learnerVal));
+  const course = allCourseOptions.find(c => String(c.course_id) === String(courseVal));
+
+  if (learner && course) {
+    const level = learner.level || "Standard";
+    const discountRates = { "Standard": 0.00, "Silver": 0.10, "Gold": 0.20 };
+    const discountRate = discountRates[level] || 0.00;
+    const price = Number(course.price) || 0;
+    const discountAmount = price * discountRate;
+    const finalPrice = price - discountAmount;
+
+    infoBox.style.display = "block";
+    infoBox.innerHTML = `
+      <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px 16px; border-radius: 8px; margin-top: 12px; font-size: 14px; line-height: 1.6;">
+        <div style="font-weight: 600; color: #166534; margin-bottom: 4px;">💳 สรุปราคาที่ต้องชำระ:</div>
+        <div>👤 ผู้เรียน: <strong>${learner.name}</strong> <span style="font-size:12px; background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px;">${level} (ลด ${discountRate*100}%)</span></div>
+        <div>📚 คอร์ส: <strong>${course.title}</strong> (ราคาเต็ม ฿${price.toLocaleString()})</div>
+        <div style="border-top: 1px dashed #bbf7d0; margin-top: 6px; padding-top: 6px; font-size: 16px; color: #15803d; font-weight: 700;">
+          💰 ยอดสุทธิที่ต้องจ่าย: ฿${finalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+        </div>
+      </div>
+    `;
+  } else {
+    infoBox.style.display = "block";
+    infoBox.innerHTML = `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 8px; margin-top: 12px; font-size: 13px; color: #64748b;">
+        💡 กรุณาระบุรหัสผู้เรียนและรหัสคอร์สเพื่อคำนวณราคาชำระจริง
+      </div>
+    `;
+  }
+}
+
+// ---------- 5.2 สร้างช่องฟอร์ม (แยกตามชนิดช่อง) ----------
 
 function selectInput(f, prefix, value) {
   return `<select id="${prefix}${f.key}">` +
@@ -220,7 +273,7 @@ function courseSelectInput(f, prefix, value) {
     `<option value="">— ไม่มี (ไม่ต้องเรียนก่อน) —</option>` +
     allCourseOptions
       .filter(c => c.course_id !== editingId)
-      .map(c => `<option value="${c.course_id}" ${String(c.course_id) === String(value) ? "selected" : ""}>${c.course_id} - ${c.title}</option>`)
+      .map(c => `<option value="${c.course_id}" ${String(c.course_id) === String(value) ? "selected" : ""}>${c.course_id} : ${c.title}</option>`)
       .join("") +
     `</select>`;
 }
@@ -228,14 +281,14 @@ function courseSelectInput(f, prefix, value) {
 function learnerAutocompleteInput(f, prefix, value) {
   return `<input list="list_learners" id="${prefix}${f.key}" placeholder="พิมพ์รหัสหรือชื่อ..." value="${value ?? ""}">` +
     `<datalist id="list_learners">` +
-    allLearnerOptions.map(l => `<option value="${l.learner_id}">${l.learner_id} : ${l.name}</option>`).join("") +
+    allLearnerOptions.map(l => `<option value="${l.learner_id}">${l.learner_id} : ${l.name} (${l.level || 'Standard'})</option>`).join("") +
     `</datalist>`;
 }
 
 function courseAutocompleteInput(f, prefix, value) {
   return `<input list="list_courses" id="${prefix}${f.key}" placeholder="พิมพ์รหัสหรือชื่อ..." value="${value ?? ""}">` +
     `<datalist id="list_courses">` +
-    allCourseOptions.map(c => `<option value="${c.course_id}">${c.course_id} : ${c.title}</option>`).join("") +
+    allCourseOptions.map(c => `<option value="${c.course_id}">${c.course_id} : ${c.title} (฿${c.price})</option>`).join("") +
     `</datalist>`;
 }
 
@@ -254,7 +307,7 @@ function fieldHtml(f, prefix, value = "") {
   return `<div class="field"><label>${f.label}</label>${input}</div>`;
 }
 
-// ---------- 5.2 ค้นหา & ตาราง ----------
+// ---------- 5.3 ค้นหา & ตาราง ----------
 
 function buildSearch() {
   const cfg = ENTITIES[current];
@@ -294,7 +347,7 @@ function renderTable(r) {
   }).join("");
 }
 
-// ---------- 5.3 ฟอร์ม Modal & ปุ่มจัดการ (เพิ่ม / แก้ไข / ลบ) ----------
+// ---------- 5.4 ฟอร์ม Modal & ปุ่มจัดการ (เพิ่ม / แก้ไข / ลบ) ----------
 
 async function openForm(title, data = {}) {
   // โหลดรายการคอร์ส/ผู้เรียนมาใส่ dropdown ตามตารางที่เปิดอยู่
@@ -307,8 +360,27 @@ async function openForm(title, data = {}) {
     allLearnerOptions = resL.ok ? resL.data : [];
   }
   $("#modalTitle").textContent = title;
-  $("#formFields").innerHTML = ENTITIES[current].form.map(f => fieldHtml(f, "f_", data[f.key])).join("");
+
+  let formHtml = ENTITIES[current].form.map(f => fieldHtml(f, "f_", data[f.key])).join("");
+
+  // เพิ่มกล่องสรุปราคาเฉพาะหน้าจัดการการลงทะเบียน
+  if (current === "enrollments") {
+    formHtml += `<div id="priceInfoBox"></div>`;
+  }
+
+  $("#formFields").innerHTML = formHtml;
   $("#modal").classList.remove("hidden");
+
+  // ผูก Event คำนวณราคาอัตโนมัติเมื่อพิมพ์รหัสผู้เรียนหรือรหัสคอร์ส
+  if (current === "enrollments") {
+    const inpLearner = $("#f_learner_id");
+    const inpCourse = $("#f_course_id");
+
+    if (inpLearner) inpLearner.addEventListener("input", calculateEnrollmentPrice);
+    if (inpCourse) inpCourse.addEventListener("input", calculateEnrollmentPrice);
+
+    calculateEnrollmentPrice();
+  }
 }
 
 function collectForm() {
@@ -345,7 +417,7 @@ async function save() {
   doSearch();
 }
 
-// ---------- 5.4 ผูกปุ่มต่างๆ ของหน้า CRUD ----------
+// ---------- 5.5 ผูกปุ่มต่างๆ ของหน้า CRUD ----------
 
 $("#btnSearch").onclick = doSearch;
 $("#btnClear").onclick = () => buildSearch();
@@ -354,9 +426,9 @@ $("#btnSave").onclick = save;
 $("#btnCancel").onclick = () => $("#modal").classList.add("hidden");
 
 
-// ============================================================
-// [6] หน้าจัดการ Progress (ราย Enrollment)
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 6 : หน้าจัดการ Progress (ราย Enrollment)
+// ################################################################
 
 // ---------- 6.1 Dropdown เลือก Enrollment ----------
 async function initProgressDropdown() {
@@ -441,9 +513,9 @@ async function saveEnrollmentProgress() {
 }
 
 
-// ============================================================
-// [7] เริ่มต้นระบบ (Initialize)
-// ============================================================
+// ################################################################
+// ##  ส่วนที่ 7 : เริ่มต้นระบบ (Initialize)
+// ################################################################
 
 // เปิดหน้า Home เป็นค่าเริ่มต้นเมื่อโหลดเว็บ
 window.onload = () => {

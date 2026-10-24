@@ -1,25 +1,27 @@
-# ============================================================
+# ################################################################
 #  db.py — ชั้นติดต่อฐานข้อมูล MySQL (ระบบคอร์สออนไลน์)
-# ============================================================
+# ################################################################
 #
-#   [1] ตั้งค่าและค่าคงที่        LEVEL_DISCOUNT, DEFAULT_MAX_SEATS
-#   [2] ฟังก์ชันพื้นฐาน           get_connection, run_query, run_command
-#   [3] ผู้เรียน (learner)        search / get / create / update / delete
-#   [4] คอร์ส (course)            search / get / create / update / delete
-#   [5] บทเรียน (lesson)          search / get / create / update / delete
-#   [6] การลงทะเบียน (enrollment)  ฟังก์ชันช่วยคำนวณราคา + CRUD
-#   [7] Progress ราย Enrollment   get_enrollment_progress_detail, save_enrollment_progress_bulk
-#   [8] หน้า Home                 get_homepage_courses
-#   [9] รายงาน (Reports)          summary / popular / completion / prerequisites / revenue
+#  สารบัญ  (กด Ctrl+F แล้วพิมพ์ "ส่วนที่ 3" เพื่อกระโดดไปส่วนนั้น)
 #
-# ============================================================
+#   ส่วนที่ 1  ตั้งค่าและค่าคงที่          LEVEL_DISCOUNT, DEFAULT_LEVEL, DEFAULT_MAX_SEATS
+#   ส่วนที่ 2  ฟังก์ชันพื้นฐาน             get_connection, run_query, run_command
+#   ส่วนที่ 3  ผู้เรียน (learner)          ค้นหา / ดู / เพิ่ม / แก้ไข / ลบ
+#   ส่วนที่ 4  คอร์ส (course)              ค้นหา / ดู / เพิ่ม / แก้ไข / ลบ
+#   ส่วนที่ 5  บทเรียน (lesson)            ค้นหา / ดู / เพิ่ม / แก้ไข / ลบ
+#   ส่วนที่ 6  การลงทะเบียน (enrollment)    ฟังก์ชันช่วยคำนวณราคา + ค้นหา / ดู / เพิ่ม / แก้ไข / ลบ
+#   ส่วนที่ 7  Progress ราย Enrollment     ดึงรายการบทเรียน / บันทึกความคืบหน้า
+#   ส่วนที่ 8  หน้า Home                   การ์ดคอร์ส
+#   ส่วนที่ 9  รายงาน (Reports)            สรุป / ยอดนิยม / อัตราเรียนจบ / วิชาบังคับก่อน / รายได้
+#
+# ################################################################
 import mysql.connector
 import config
 
 
-# ============================================================
-# [1] ตั้งค่าและค่าคงที่
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 1 : ตั้งค่าและค่าคงที่
+# ################################################################
 
 # อัตราส่วนลดตามระดับผู้เรียน
 LEVEL_DISCOUNT = {
@@ -32,10 +34,11 @@ DEFAULT_LEVEL = "Standard"   # ระดับเริ่มต้นของ�
 DEFAULT_MAX_SEATS = 20       # จำนวนที่นั่งเริ่มต้นของคอร์ส
 
 
-# ============================================================
-# [2] ฟังก์ชันพื้นฐาน (เชื่อมต่อ / รันคำสั่ง SQL)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 2 : ฟังก์ชันพื้นฐาน (เชื่อมต่อ / รันคำสั่ง SQL)
+# ################################################################
 
+# ---------- 2.1 เชื่อมต่อฐานข้อมูล ----------
 def get_connection():
     return mysql.connector.connect(
         host=config.DB_HOST,
@@ -46,6 +49,7 @@ def get_connection():
     )
 
 
+# ---------- 2.2 รันคำสั่ง SELECT ----------
 def run_query(sql, params=None):
     """รันคำสั่ง SELECT คืนผลเป็น list ของ dict"""
     conn = get_connection()
@@ -57,6 +61,7 @@ def run_query(sql, params=None):
     return rows
 
 
+# ---------- 2.3 รันคำสั่ง INSERT / UPDATE / DELETE ----------
 def run_command(sql, params=None):
     """รันคำสั่ง INSERT / UPDATE / DELETE พร้อม commit"""
     conn = get_connection()
@@ -69,10 +74,11 @@ def run_command(sql, params=None):
     return out
 
 
-# ============================================================
-# [3] ผู้เรียน (learner)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 3 : ผู้เรียน (learner)
+# ################################################################
 
+# ---------- 3.1 ค้นหา ----------
 def search_learners(filters):
     sql = """
         SELECT
@@ -97,6 +103,7 @@ def search_learners(filters):
     return run_query(sql, tuple(params))
 
 
+# ---------- 3.2 ดูรายการเดียว ----------
 def get_learner(learner_id):
     sql = """
         SELECT
@@ -112,26 +119,30 @@ def get_learner(learner_id):
     return rows[0] if rows else None
 
 
+# ---------- 3.3 เพิ่ม ----------
 def create_learner(data):
     sql = "INSERT INTO learner (name, email, join_date, level) VALUES (%s, %s, %s, %s)"
     level = data.get("level") or DEFAULT_LEVEL
     return run_command(sql, (data["name"], data["email"], data["join_date"], level))
 
 
+# ---------- 3.4 แก้ไข ----------
 def update_learner(learner_id, data):
     sql = "UPDATE learner SET name=%s, email=%s, join_date=%s, level=%s WHERE learner_id=%s"
     level = data.get("level") or DEFAULT_LEVEL
     return run_command(sql, (data["name"], data["email"], data["join_date"], level, learner_id))
 
 
+# ---------- 3.5 ลบ ----------
 def delete_learner(learner_id):
     return run_command("DELETE FROM learner WHERE learner_id=%s", (learner_id,))
 
 
-# ============================================================
-# [4] คอร์ส (course)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 4 : คอร์ส (course)
+# ################################################################
 
+# ---------- 4.1 ค้นหา ----------
 def search_courses(filters):
     sql = "SELECT course_id, title, category, price, max_seats, prerequisite_id FROM course WHERE 1=1"
     params = []
@@ -144,11 +155,13 @@ def search_courses(filters):
     return run_query(sql, tuple(params))
 
 
+# ---------- 4.2 ดูรายการเดียว ----------
 def get_course(course_id):
     rows = run_query("SELECT * FROM course WHERE course_id = %s", (course_id,))
     return rows[0] if rows else None
 
 
+# ---------- 4.3 เพิ่ม ----------
 def create_course(data):
     sql = "INSERT INTO course (title, category, price, max_seats, prerequisite_id) VALUES (%s, %s, %s, %s, %s)"
     prereq = data.get("prerequisite_id") or None
@@ -156,6 +169,7 @@ def create_course(data):
     return run_command(sql, (data["title"], data["category"], data["price"], max_seats, prereq))
 
 
+# ---------- 4.4 แก้ไข ----------
 def update_course(course_id, data):
     sql = "UPDATE course SET title=%s, category=%s, price=%s, max_seats=%s, prerequisite_id=%s WHERE course_id=%s"
     prereq = data.get("prerequisite_id") or None
@@ -163,14 +177,16 @@ def update_course(course_id, data):
     return run_command(sql, (data["title"], data["category"], data["price"], max_seats, prereq, course_id))
 
 
+# ---------- 4.5 ลบ ----------
 def delete_course(course_id):
     return run_command("DELETE FROM course WHERE course_id=%s", (course_id,))
 
 
-# ============================================================
-# [5] บทเรียน (lesson)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 5 : บทเรียน (lesson)
+# ################################################################
 
+# ---------- 5.1 ค้นหา ----------
 def search_lessons(filters):
     sql = """
         SELECT
@@ -195,31 +211,34 @@ def search_lessons(filters):
     return run_query(sql, tuple(params))
 
 
+# ---------- 5.2 ดูรายการเดียว ----------
 def get_lesson(lesson_id):
     rows = run_query("SELECT * FROM lesson WHERE lesson_id = %s", (lesson_id,))
     return rows[0] if rows else None
 
 
+# ---------- 5.3 เพิ่ม ----------
 def create_lesson(data):
     sql = "INSERT INTO lesson (course_id, title, seq_no, duration_min) VALUES (%s, %s, %s, %s)"
     return run_command(sql, (data["course_id"], data["title"], data["seq_no"], data["duration_min"]))
 
 
+# ---------- 5.4 แก้ไข ----------
 def update_lesson(lesson_id, data):
     sql = "UPDATE lesson SET course_id=%s, title=%s, seq_no=%s, duration_min=%s WHERE lesson_id=%s"
     return run_command(sql, (data["course_id"], data["title"], data["seq_no"], data["duration_min"], lesson_id))
 
 
+# ---------- 5.5 ลบ ----------
 def delete_lesson(lesson_id):
     return run_command("DELETE FROM lesson WHERE lesson_id=%s", (lesson_id,))
 
 
-# ============================================================
-# [6] การลงทะเบียน (enrollment)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 6 : การลงทะเบียน (enrollment)
+# ################################################################
 
-# ---------- 6.1 ฟังก์ชันช่วย (ใช้ภายในหมวดนี้) ----------
-
+# ---------- 6.1 ฟังก์ชันช่วยคำนวณราคา (ใช้ภายในส่วนนี้) ----------
 def _get_learner_level(learner_id):
     """คืนระดับของผู้เรียน (ถ้าไม่พบหรือไม่มีค่า ใช้ Standard)"""
     rows = run_query("SELECT level FROM learner WHERE learner_id = %s", (learner_id,))
@@ -235,8 +254,7 @@ def _calc_final_price(course_price, learner_level):
     return round(original_price * (1.00 - discount), 2)
 
 
-# ---------- 6.2 ค้นหา / ดึงข้อมูล ----------
-
+# ---------- 6.2 ค้นหา ----------
 def search_enrollments(filters):
     sql = """
         SELECT
@@ -267,6 +285,7 @@ def search_enrollments(filters):
     return run_query(sql, tuple(params))
 
 
+# ---------- 6.3 ดูรายการเดียว ----------
 def get_enrollment(enroll_id):
     sql = """
         SELECT enroll_id, learner_id, course_id, final_price,
@@ -278,8 +297,7 @@ def get_enrollment(enroll_id):
     return rows[0] if rows else None
 
 
-# ---------- 6.3 เพิ่ม ----------
-
+# ---------- 6.4 เพิ่ม (มีกฎตรวจสอบ 5 ขั้น) ----------
 def create_enrollment(data):
     learner_id = data["learner_id"]
     course_id = data["course_id"]
@@ -329,8 +347,7 @@ def create_enrollment(data):
     return run_command(sql, (learner_id, course_id, data["enroll_date"], final_price, data["status"]))
 
 
-# ---------- 6.4 แก้ไข ----------
-
+# ---------- 6.5 แก้ไข ----------
 def update_enrollment(enroll_id, data):
     learner_id = data["learner_id"]
     course_id = data["course_id"]
@@ -352,16 +369,16 @@ def update_enrollment(enroll_id, data):
     return run_command(sql, (learner_id, course_id, data["enroll_date"], final_price, data["status"], enroll_id))
 
 
-# ---------- 6.5 ลบ ----------
-
+# ---------- 6.6 ลบ ----------
 def delete_enrollment(enroll_id):
     return run_command("DELETE FROM enrollment WHERE enroll_id=%s", (enroll_id,))
 
 
-# ============================================================
-# [7] Progress ราย Enrollment (หน้า "จัดการ Progress")
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 7 : Progress ราย Enrollment (หน้า "จัดการ Progress")
+# ################################################################
 
+# ---------- 7.1 ดึงข้อมูล Enrollment + รายการบทเรียน ----------
 def get_enrollment_progress_detail(enroll_id):
     """ดึงข้อมูล Enrollment และบทเรียนทั้งหมดพร้อมสถานะ watched"""
     sql_enr = """
@@ -394,6 +411,7 @@ def get_enrollment_progress_detail(enroll_id):
     return {"enrollment": enrollment_data, "lessons": lessons}
 
 
+# ---------- 7.2 บันทึก Progress ทุกบทเรียน ----------
 def save_enrollment_progress_bulk(enroll_id, watched_lesson_ids):
     """บันทึก Progress ทุกบทเรียน และปรับ status เป็น completed ให้อัตโนมัติเมื่อครบ"""
     enr = run_query("SELECT learner_id, course_id FROM enrollment WHERE enroll_id = %s", (enroll_id,))
@@ -426,10 +444,11 @@ def save_enrollment_progress_bulk(enroll_id, watched_lesson_ids):
     return {"status": new_status, "watched_count": watched_count, "total_count": total_count}
 
 
-# ============================================================
-# [8] หน้า Home (แสดงการ์ดคอร์ส)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 8 : หน้า Home (แสดงการ์ดคอร์ส)
+# ################################################################
 
+# ---------- 8.1 ดึงคอร์สทั้งหมด + จำนวนคนที่ลงทะเบียนแล้ว ----------
 def get_homepage_courses():
     """ดึงคอร์สทั้งหมด พร้อมจำนวนคนที่ลงทะเบียนแล้วในปัจจุบัน"""
     sql = """
@@ -446,9 +465,9 @@ def get_homepage_courses():
     return run_query(sql)
 
 
-# ============================================================
-# [9] รายงาน (Reports)
-# ============================================================
+# ################################################################
+# ##  ส่วนที่ 9 : รายงาน (Reports)
+# ################################################################
 
 # ---------- 9.1 สรุปจำนวนรวม ----------
 def report_summary():

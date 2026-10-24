@@ -58,7 +58,7 @@ CREATE TABLE course (
 CREATE TABLE lesson (
     lesson_id INT AUTO_INCREMENT PRIMARY KEY,
     course_id INT NOT NULL,
-    title VARCHAR(150) NOT NULL,
+    title VARCHAR(150) NOT NULL,-- ชื่อบทเรียน
     seq_no INT NOT null UNIQUE,
     duration_min INT NOT NULL,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE);
@@ -75,6 +75,8 @@ CREATE TABLE enrollment (
     FOREIGN KEY (learner_id) REFERENCES learner(learner_id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
 );
+
+
 -- 5. ความคืบหน้า (progress)
 CREATE TABLE progress (
     learner_id INT NOT NULL,
